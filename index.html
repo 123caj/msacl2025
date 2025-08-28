@@ -6,17 +6,12 @@
     <title>MSACL 2025 – Isotopes 101</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-    </style>
+    <style> body { font-family: 'Inter', sans-serif; } </style>
 </head>
 <body class="bg-gray-100 flex items-center justify-center min-h-screen">
 
     <div id="container" class="w-full max-w-2xl mx-auto p-4 md:p-8">
-        <!-- Login Section -->
-        <div id="login-section" class="bg-white p-8 rounded-xl shadow-lg transition-opacity duration-500">
+        <div id="login-section" class="bg-white p-8 rounded-xl shadow-lg">
             <div class="text-center mb-8">
                 <h1 class="text-3xl font-bold text-gray-800">MSACL 2025 – Isotopes 101</h1>
                 <p class="text-xl text-gray-600 mt-2">Workshop Materials</p>
@@ -27,90 +22,54 @@
                     <label for="password" class="sr-only">Password</label>
                     <input type="password" id="password" placeholder="Enter Access Code" class="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition">
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
+                <button type="submit" id="submit-button" class="w-full bg-blue-600 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-transform transform hover:scale-105">
                     Unlock Materials
                 </button>
             </form>
             <p id="error-message" class="text-red-500 text-center mt-4 hidden">Incorrect password. Please try again.</p>
         </div>
-
-        <!-- Materials Section (Hidden by default) -->
-        <div id="materials-section" class="hidden transition-opacity duration-500">
-             <div class="bg-white p-8 rounded-xl shadow-lg">
-                <div class="text-center mb-8">
-                    <h1 class="text-3xl font-bold text-gray-800">MSACL 2025 – Isotopes 101</h1>
-                     <p class="text-xl text-gray-600 mt-2">Workshop Materials</p>
-                    <p class="text-gray-500 mt-4">All workshop materials are available for download below.</p>
-                </div>
-                
-                <!-- File List -->
-                <div class="space-y-4">
-                    <!-- Link to Google Drive Folder -->
-                    <a href="https://drive.google.com/drive/folders/1WEhP-Zfzbx2gf0CUUBf2YsOohoXqRY_G?usp=sharing" target="_blank" class="flex items-center justify-between bg-blue-50 p-4 rounded-lg border border-blue-200 hover:bg-blue-100 hover:shadow-md transition-all duration-300">
-                        <div class="flex items-center">
-                            <svg class="w-6 h-6 text-blue-500 mr-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>
-                            <span class="font-medium text-gray-700">Access All Workshop Materials</span>
-                        </div>
-                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-                    </a>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
-        // --- Configuration ---
-        // Set the password for the workshop materials here.
-        const CORRECT_PASSWORD = "Isotopes101!"; // IMPORTANT: Change this to your desired password
-
-        // --- DOM Elements ---
-        const loginSection = document.getElementById('login-section');
-        const materialsSection = document.getElementById('materials-section');
         const passwordForm = document.getElementById('password-form');
         const passwordInput = document.getElementById('password');
         const errorMessage = document.getElementById('error-message');
+        const submitButton = document.getElementById('submit-button');
 
-        // --- Event Listener ---
-        passwordForm.addEventListener('submit', function(event) {
-            // Prevent the form from submitting in the traditional way
+        passwordForm.addEventListener('submit', async function(event) {
             event.preventDefault();
+            errorMessage.classList.add('hidden');
+            submitButton.disabled = true;
+            submitButton.textContent = 'Verifying...';
 
-            // Get the user's input and trim any whitespace
-            const enteredPassword = passwordInput.value.trim();
+            const enteredPassword = passwordInput.value;
 
-            // --- Password Check ---
-            if (enteredPassword === CORRECT_PASSWORD) {
-                // If the password is correct, hide the login form and show the materials
-                
-                // 1. Add fade-out class to login section
-                loginSection.classList.add('opacity-0');
-                
-                // 2. After the fade-out transition, hide it and show the materials section
-                setTimeout(() => {
-                    loginSection.style.display = 'none';
-                    materialsSection.style.display = 'block';
-                    // 3. Use a nested timeout to allow the display property to apply before fading in
-                    setTimeout(() => {
-                        materialsSection.classList.remove('hidden');
-                        materialsSection.classList.add('opacity-100');
-                    }, 50); // A small delay is sufficient
-                }, 500); // This duration should match the CSS transition duration
+            try {
+                // This is the endpoint for our serverless function
+                const response = await fetch('/.netlify/functions/password-protect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: enteredPassword }),
+                });
 
-            } else {
-                // If the password is incorrect, show the error message
+                const data = await response.json();
+
+                if (response.ok) {
+                    // SUCCESS: The server sent back the link. Redirect the user.
+                    window.location.href = data.url;
+                } else {
+                    // ERROR: The server said the password was wrong.
+                    throw new Error(data.message || 'Incorrect password.');
+                }
+            } catch (error) {
+                errorMessage.textContent = error.message;
                 errorMessage.classList.remove('hidden');
-                passwordInput.focus(); // Set focus back to the password field
-                passwordInput.select(); // Select the text for easy re-entry
-            }
-        });
-        
-        // Hide the error message when the user starts typing again
-        passwordInput.addEventListener('input', function() {
-            if (!errorMessage.classList.contains('hidden')) {
-                errorMessage.classList.add('hidden');
+                passwordInput.select();
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = 'Unlock Materials';
             }
         });
     </script>
-
 </body>
 </html>
